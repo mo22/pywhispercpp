@@ -322,7 +322,7 @@ public:
 
 void whisper_log_set_wrapper(py::function callback) {
     whisper_log_set(
-        [](const char * str, void * user_data) {
+        [&](const char * str, void * user_data) {
             py::gil_scoped_acquire gil;  // Acquire the GIL while in this scope.
             callback(std::string(str));
         },
