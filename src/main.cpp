@@ -320,14 +320,16 @@ public:
     }
 };
 
+py::function whisper_log_callback = nullptr;
+
+void whisper_log_set_callback(const char * str, void * user_data) {
+    py::gil_scoped_acquire gil;  // Acquire the GIL while in this scope.
+    whisper_log_callback(std::string(str));
+}
+
 void whisper_log_set_wrapper(py::function callback) {
-    whisper_log_set(
-        [&](const char * str, void * user_data) {
-            py::gil_scoped_acquire gil;  // Acquire the GIL while in this scope.
-            callback(std::string(str));
-        },
-        nullptr
-    );
+    whisper_log_callback = callback;
+    whisper_log_set(whisper_log_set_callback, nullptr);
 }
 
 WhisperFullParamsWrapper  whisper_full_default_params_wrapper(enum whisper_sampling_strategy strategy) {
