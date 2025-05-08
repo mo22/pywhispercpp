@@ -322,7 +322,7 @@ public:
 
 void whisper_log_set_callback(enum ggml_log_level level, const char * str, void * user_data) {
     py::gil_scoped_acquire gil;  // Acquire the GIL while in this scope.
-    py_log_callback(level, std::string(str));
+    py_log_callback(static_cast<int>(level), std::string(str));
 }
 
 void whisper_log_set_wrapper(py::function callback) {
