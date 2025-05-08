@@ -276,13 +276,17 @@ float whisper_full_get_token_p_wrapper(struct whisper_context_wrapper * ctx, int
     return whisper_full_get_token_p(ctx->ptr, i_segment, i_token);
 }
 
+float whisper_full_get_segment_no_speech_prob_wrapper(struct whisper_context_wrapper * ctx, int i_segment){
+    return whisper_full_get_segment_no_speech_prob(ctx->ptr, i_segment);
+}
+
 class WhisperFullParamsWrapper : public whisper_full_params {
-    std::string initial_prompt_str;   
-    std::string suppress_regex_str;      
+    std::string initial_prompt_str;
+    std::string suppress_regex_str;
 public:
     py::function py_progress_callback;
     WhisperFullParamsWrapper(const whisper_full_params& params = whisper_full_params())
-        : whisper_full_params(params),  
+        : whisper_full_params(params),
         initial_prompt_str(params.initial_prompt ? params.initial_prompt : ""),
         suppress_regex_str(params.suppress_regex ? params.suppress_regex : "") {
         initial_prompt = initial_prompt_str.empty() ? nullptr : initial_prompt_str.c_str();
@@ -304,7 +308,7 @@ public:
 
     WhisperFullParamsWrapper(const WhisperFullParamsWrapper& other)
         : WhisperFullParamsWrapper(static_cast<const whisper_full_params&>(other)) {}
-    
+
     void set_initial_prompt(const std::string& prompt) {
         initial_prompt_str = prompt;
         initial_prompt = initial_prompt_str.c_str();
@@ -316,13 +320,23 @@ public:
     }
 };
 
+void whisper_log_set_wrapper(py::function callback) {
+    whisper_log_set(
+        [](const char * str, void * user_data) {
+            py::gil_scoped_acquire gil;  // Acquire the GIL while in this scope.
+            callback(std::string(str));
+        },
+        nullptr
+    );
+}
+
 WhisperFullParamsWrapper  whisper_full_default_params_wrapper(enum whisper_sampling_strategy strategy) {
     return WhisperFullParamsWrapper(whisper_full_default_params(strategy));
 }
 
 // callbacks mechanism
 
-void _new_segment_callback(struct whisper_context * ctx, struct whisper_state * state, int n_new, void * user_data){
+void _new_segment_callback(struct whisper_context * ctx, struct whisper_state * state, int n_new, void * user_data) {
     struct whisper_context_wrapper ctx_w;
     ctx_w.ptr = ctx;
     // call the python callback
@@ -330,12 +344,12 @@ void _new_segment_callback(struct whisper_context * ctx, struct whisper_state * 
     py_new_segment_callback(ctx_w, n_new, user_data);
 };
 
-void assign_new_segment_callback(struct whisper_full_params *params, py::function f){
+void assign_new_segment_callback(struct whisper_full_params *params, py::function f) {
     params->new_segment_callback = _new_segment_callback;
     py_new_segment_callback = f;
 };
 
-bool _encoder_begin_callback(struct whisper_context * ctx, struct whisper_state * state, void * user_data){
+bool _encoder_begin_callback(struct whisper_context * ctx, struct whisper_state * state, void * user_data) {
     struct whisper_context_wrapper ctx_w;
     ctx_w.ptr = ctx;
     // call the python callback
@@ -344,7 +358,7 @@ bool _encoder_begin_callback(struct whisper_context * ctx, struct whisper_state 
     return res;
 }
 
-void assign_encoder_begin_callback(struct whisper_full_params *params, py::function f){
+void assign_encoder_begin_callback(struct whisper_full_params *params, py::function f) {
     params->encoder_begin_callback = _encoder_begin_callback;
     py_encoder_begin_callback = f;
 }
@@ -504,7 +518,7 @@ PYBIND11_MODULE(_pywhispercpp, m) {
         .export_values();
 
     py::class_<whisper_full_params>(m, "__whisper_full_params__internal")
-        .def(py::init<>()) 
+        .def(py::init<>())
         .def("__repr__", [](const whisper_full_params& self) {
             std::ostringstream oss;
             oss << "whisper_full_params("
@@ -581,7 +595,7 @@ PYBIND11_MODULE(_pywhispercpp, m) {
         .def_readwrite("split_on_word", &WhisperFullParamsWrapper::split_on_word)
         .def_readwrite("max_tokens", &WhisperFullParamsWrapper::max_tokens)
         .def_readwrite("audio_ctx", &WhisperFullParamsWrapper::audio_ctx)
-        .def_property("suppress_regex", 
+        .def_property("suppress_regex",
             [](WhisperFullParamsWrapper &self) {
                 return py::str(self.suppress_regex ? self.suppress_regex : "");
             },
@@ -598,14 +612,14 @@ PYBIND11_MODULE(_pywhispercpp, m) {
         )
         .def_readwrite("prompt_tokens", &WhisperFullParamsWrapper::prompt_tokens)
         .def_readwrite("prompt_n_tokens", &WhisperFullParamsWrapper::prompt_n_tokens)
-        .def_property("language", 
-            [](WhisperFullParamsWrapper &self) { 
-                return py::str(self.language); 
+        .def_property("language",
+            [](WhisperFullParamsWrapper &self) {
+                return py::str(self.language);
             },
             [](WhisperFullParamsWrapper &self, const char *new_c) {// using lang_id let us avoid issues with memory management
                 const int lang_id = (new_c && strlen(new_c) > 0) ? whisper_lang_id(new_c) : -1;
                 if (lang_id != -1) {
-                    self.language = whisper_lang_str(lang_id);    
+                    self.language = whisper_lang_str(lang_id);
                 } else {
                     self.language = ""; //defaults to auto-detect
                 }
@@ -629,7 +643,10 @@ PYBIND11_MODULE(_pywhispercpp, m) {
 
 
     py::implicitly_convertible<whisper_full_params, WhisperFullParamsWrapper>();
-    
+
+    m.def("whisper_log_set", &whisper_log_set_wrapper, "Set the log callback for the model.",
+        py::arg("callback"));
+
     m.def("whisper_full_default_params", &whisper_full_default_params_wrapper);
 
     m.def("whisper_full", &whisper_full_wrapper, "Run the entire model: PCM -> log mel spectrogram -> encoder -> decoder -> text\n"
@@ -656,6 +673,8 @@ PYBIND11_MODULE(_pywhispercpp, m) {
                                                                                 "This contains probabilities, timestamps, etc.");
 
     m.def("whisper_full_get_token_p", &whisper_full_get_token_p_wrapper, "Get the probability of the specified token in the specified segment.");
+
+    m.def("whisper_full_get_segment_no_speech_prob", &whisper_full_get_segment_no_speech_prob_wrapper, "Get the probability of no speech in the specified segment.");
 
     ////////////////////////////////////////////////////////////////////////////
 
