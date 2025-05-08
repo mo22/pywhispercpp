@@ -29,7 +29,7 @@ using namespace pybind11::literals; // to bring in the `_a` literal
 py::function py_new_segment_callback;
 py::function py_encoder_begin_callback;
 py::function py_logits_filter_callback;
-
+py::function py_log_callback;
 
 // whisper context wrapper, to solve the incomplete type issue
 // Thanks to https://github.com/pybind/pybind11/issues/2770
@@ -320,15 +320,13 @@ public:
     }
 };
 
-py::function whisper_log_callback = nullptr;
-
 void whisper_log_set_callback(enum ggml_log_level level, const char * str, void * user_data) {
     py::gil_scoped_acquire gil;  // Acquire the GIL while in this scope.
-    whisper_log_callback(std::string(str));
+    py_log_callback(level, std::string(str));
 }
 
 void whisper_log_set_wrapper(py::function callback) {
-    whisper_log_callback = callback;
+    py_log_callback = callback;
     whisper_log_set(whisper_log_set_callback, nullptr);
 }
 
