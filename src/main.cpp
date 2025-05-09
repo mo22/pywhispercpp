@@ -56,21 +56,27 @@ struct whisper_model_loader_wrapper {
 };
 
 struct whisper_context_wrapper whisper_init_from_file_wrapper(const char * path_model){
-    struct whisper_context * ctx = whisper_init_from_file(path_model);
+    struct whisper_context_params params = whisper_context_default_params();
+    params.dtw_token_timestamps = true;
+    struct whisper_context * ctx = whisper_init_from_file_with_params(path_model, params);
     struct whisper_context_wrapper ctw_w;
     ctw_w.ptr = ctx;
     return ctw_w;
 }
 
 struct whisper_context_wrapper whisper_init_from_buffer_wrapper(void * buffer, size_t buffer_size){
-    struct whisper_context * ctx = whisper_init_from_buffer(buffer, buffer_size);
+    struct whisper_context_params params = whisper_context_default_params();
+    params.dtw_token_timestamps = true;
+    struct whisper_context * ctx = whisper_init_from_buffer_with_params(buffer, buffer_size, params);
     struct whisper_context_wrapper ctw_w;
     ctw_w.ptr = ctx;
     return ctw_w;
 }
 
 struct whisper_context_wrapper whisper_init_wrapper(struct whisper_model_loader_wrapper * loader){
-    struct whisper_context * ctx = whisper_init(loader->ptr);
+    struct whisper_context_params params = whisper_context_default_params();
+    params.dtw_token_timestamps = true;
+    struct whisper_context * ctx = whisper_init_with_params(loader->ptr, params);
     struct whisper_context_wrapper ctw_w;
     ctw_w.ptr = ctx;
     return ctw_w;
@@ -416,6 +422,7 @@ PYBIND11_MODULE(_pywhispercpp, m) {
             .def_readwrite("ptsum", &whisper_token_data::ptsum)
             .def_readwrite("t0", &whisper_token_data::t0)
             .def_readwrite("t1", &whisper_token_data::t1)
+            .def_readwrite("t_dtw", &whisper_token_data::t_dtw)
             .def_readwrite("vlen", &whisper_token_data::vlen);
 
     py::class_<whisper_model_loader_wrapper>(m,"whisper_model_loader")
