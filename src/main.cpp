@@ -60,8 +60,8 @@ struct whisper_context_wrapper whisper_init_from_file_wrapper(const char * path_
 
     struct whisper_context_params params = whisper_context_default_params();
     // this does not work!
-    // params.dtw_token_timestamps = true;
-    // params.dtw_aheads_preset = WHISPER_AHEADS_LARGE_V2;
+    params.dtw_token_timestamps = true;
+    params.dtw_aheads_preset = WHISPER_AHEADS_LARGE_V2;
     struct whisper_context * ctx = whisper_init_from_file_with_params(path_model, params);
     struct whisper_context_wrapper ctw_w;
     ctw_w.ptr = ctx;
