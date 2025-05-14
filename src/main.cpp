@@ -364,7 +364,7 @@ void assign_new_segment_callback(struct whisper_full_params *params, py::functio
     py_new_segment_callback = f;
 };
 
-void assign_new_segment_callback(struct whisper_full_params *params, py::none n) {
+void reset_new_segment_callback(struct whisper_full_params *params) {
     params->new_segment_callback = nullptr;
     py_new_segment_callback.release();
 };
@@ -708,6 +708,9 @@ PYBIND11_MODULE(_pywhispercpp, m) {
 
     m.def("assign_new_segment_callback", &assign_new_segment_callback, "Assigns a new_segment_callback, takes <whisper_full_params> instance and a callable function with the same parameters which are defined in the interface",
         py::arg("params"), py::arg("callback"));
+
+    m.def("reset_new_segment_callback", &reset_new_segment_callback, "Resets it",
+        py::arg("params"));
 
     m.def("assign_encoder_begin_callback", &assign_encoder_begin_callback, "Assigns an encoder_begin_callback, takes <whisper_full_params> instance and a callable function with the same parameters which are defined in the interface",
             py::arg("params"), py::arg("callback"));
