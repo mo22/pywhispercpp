@@ -350,7 +350,7 @@ void _new_segment_callback(struct whisper_context * ctx, struct whisper_state * 
     struct whisper_context_wrapper ctx_w;
     ctx_w.ptr = ctx;
     // call the python callback
-//    py::gil_scoped_acquire gil;  // Acquire the GIL while in this scope.
+    py::gil_scoped_acquire gil;  // Acquire the GIL while in this scope.
     py_new_segment_callback(ctx_w, n_new, user_data);
 };
 
