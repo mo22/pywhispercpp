@@ -228,7 +228,9 @@ int whisper_full_wrapper(
         int   n_samples){
     py::buffer_info buf = samples.request();
     float *samples_ptr = static_cast<float *>(buf.ptr);
-    return whisper_full(ctx_w->ptr, params, samples_ptr, n_samples);
+    auto res =  whisper_full(ctx_w->ptr, params, samples_ptr, n_samples);
+    py_new_segment_callback = nullptr;
+    return res;
 }
 
 int whisper_full_parallel_wrapper(
