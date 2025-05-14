@@ -229,9 +229,9 @@ int whisper_full_wrapper(
     py::buffer_info buf = samples.request();
     float *samples_ptr = static_cast<float *>(buf.ptr);
     printf("whisper_full_wrapper\n");
-    auto res =  whisper_full(ctx_w->ptr, params, samples_ptr, n_samples);
+    auto res = whisper_full(ctx_w->ptr, params, samples_ptr, n_samples);
     printf("whisper_full_wrapper done\n");
-    py_new_segment_callback = nullptr;
+    // py_new_segment_callback = nullptr; // ??
     return res;
 }
 
