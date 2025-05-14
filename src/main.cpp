@@ -231,6 +231,7 @@ int whisper_full_wrapper(
     printf("whisper_full_wrapper\n");
     auto res = whisper_full(ctx_w->ptr, params, samples_ptr, n_samples);
     printf("whisper_full_wrapper done\n");
+    py_new_segment_callback.release();
     // py_new_segment_callback = nullptr; // ??
     return res;
 }
