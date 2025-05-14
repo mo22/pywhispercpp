@@ -347,11 +347,13 @@ WhisperFullParamsWrapper  whisper_full_default_params_wrapper(enum whisper_sampl
 // callbacks mechanism
 
 void _new_segment_callback(struct whisper_context * ctx, struct whisper_state * state, int n_new, void * user_data) {
+    printf("_new_segment_callback\n");
     struct whisper_context_wrapper ctx_w;
     ctx_w.ptr = ctx;
     // call the python callback
     py::gil_scoped_acquire gil;  // Acquire the GIL while in this scope.
     py_new_segment_callback(ctx_w, n_new, user_data);
+    printf("_new_segment_callback done\n");
 };
 
 void assign_new_segment_callback(struct whisper_full_params *params, py::function f) {
